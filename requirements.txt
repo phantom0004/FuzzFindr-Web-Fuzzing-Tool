@@ -1,0 +1,6 @@
+requests
+termcolor
+bs4
+time
+sys
+uuid
