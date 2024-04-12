@@ -51,7 +51,11 @@ def start_fuzzer(wordlist_path, website_link, delay, verbose="N", write_to_file=
             
             if res.status_code == 404: continue
             
-            print("[+] DIRECTORY FOUND : " + colored(word, "green") + f"    [Full Link : {website_link}/{word}]")
+            if verbose == "Y":
+                print("[+] DIRECTORY FOUND : " + colored(word, "green") + f"    [Full Link : {website_link}/{word}]")
+            else:
+                print("[+] DIRECTORY FOUND : " + colored(word, "green") + f"    [Full Link : {website_link}/{word}] \n")
+                
             if write_to_file == True: log_to_file(f"[+] DIRECTORY FOUND : {word} [Full Link : {website_link}/{word}] \n", log_file)
                 
             if verbose == "Y":
@@ -80,7 +84,7 @@ def start_fuzzer(wordlist_path, website_link, delay, verbose="N", write_to_file=
                     if links is None: pass
                     
                     if write_to_file == True: 
-                        log_to_file(f"[+] FOUND LINK : {links} \n", log_file)
+                        log_to_file(f"   --> [+] FOUND LINK : {links} \n", log_file)
                     else:
                         print(f"   --> [+] FOUND LINK : {colored(links, 'green')}")
                 
@@ -88,7 +92,7 @@ def start_fuzzer(wordlist_path, website_link, delay, verbose="N", write_to_file=
                     if titles is None: pass
                     
                     if write_to_file == True: 
-                        log_to_file(f"[+] FOUND TITLE : {titles} \n", log_file)
+                        log_to_file(f"   --> [+] FOUND TITLE : {titles} \n", log_file)
                     else:
                         print(f"   --> [+] FOUND TITLE : {colored(titles, 'green')}")
                     
@@ -96,7 +100,7 @@ def start_fuzzer(wordlist_path, website_link, delay, verbose="N", write_to_file=
                     if comments is None: pass
                     
                     if write_to_file == True: 
-                        log_to_file(f"[+] FOUND COMMENT : {comments} \n", log_file)
+                        log_to_file(f"   --> [+] FOUND COMMENT : {comments} \n", log_file)
                     else:
                         print(f"   --> [+] FOUND COMMENT : {colored(comments, 'green')}")
                     
@@ -104,7 +108,7 @@ def start_fuzzer(wordlist_path, website_link, delay, verbose="N", write_to_file=
                     if forms is None: pass
                     
                     if write_to_file == True: 
-                        log_to_file(f"\t[+] FOUND FORM : {forms} \n", log_file)
+                        log_to_file(f"   --> [+] FOUND FORM : {forms} \n", log_file)
                     else:
                         print(f"   --> [+] FOUND FORM : {colored(forms, 'green')}")
                 
@@ -247,6 +251,6 @@ print(colored(f"[!] Fuzzing ended at : {fetch_time()}", attrs=['bold']))
 if log_file is not None:
     print(colored(f"[+] Verbose log file saved at : {log_file} (Stored same directory as fuzzfindr)", 'green'))
     
-print("The fuzz storm has passed >:( See you next time!")
+print("\nThe fuzz storm has passed >:( See you next time!")
 
 # Program created purley by phantom0004, all rights reserved
