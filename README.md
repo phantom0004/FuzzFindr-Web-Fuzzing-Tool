@@ -6,6 +6,12 @@ FuzzFindr is a robust web fuzzing tool inspired by the popular "ffluf" tool on K
 - **Error Handling:** Intelligently manages diverse HTTP errors to maintain continuous operation during tests.
 - **Customizable Testing:** Supports extensive customization through user-defined wordlists and adjustable operational parameters.
 
+### Usage:
+- **Clone this repository:** git clone https://github.com/yourusername/FuzzFindr-Web-Fuzzing-Tool.git
+- **Navigate to files:** cd FuzzFindr-Web-Fuzzing-Tool
+- **Install requirements:** pip install -r requirements.txt
+- **Program launch example:** python3 fuzzfindr.py <website_link> <wordlist_path>
+
 ### Current Status:
 FuzzFindr is actively being developed with plans to improve its performance and expand the informational output on the screen. The goal is to provide a tool that is not only effective but also user-friendly and adaptable to various web security testing needs.
 
