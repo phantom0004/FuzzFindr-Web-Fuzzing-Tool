@@ -45,15 +45,23 @@ def start_fuzzer(wordlist_path, website_link, delay, verbose="N", write_to_file=
             except TimeoutError:
                 print("Connection timeout, skipping . . .")
                 continue
+            except requests.RequestException as res_error:
+                print(f"[-] An exception occured within the requests library - {res_error}")
+                break
             
             if res.status_code == 404: continue
             
-            print("[!] DIRECTORY FOUND : " + colored(word, "green") + f"    [Full Link : {website_link}/{word}]")
-            if write_to_file == True: log_to_file(f"[!] DIRECTORY FOUND : {word} [Full Link : {website_link}/{word}] \n", log_file)
+            print("[+] DIRECTORY FOUND : " + colored(word, "green") + f"    [Full Link : {website_link}/{word}]")
+            if write_to_file == True: log_to_file(f"[+] DIRECTORY FOUND : {word} [Full Link : {website_link}/{word}] \n", log_file)
                 
             if verbose == "Y":
                 try:
-                    html_extract = BeautifulSoup(res.content, "html.parser") # Extract HTML code from website
+                    if res.content and 'text/html' in res.headers.get('Content-Type', ''):
+                        html_extract = BeautifulSoup(res.content, "html.parser") # Extract HTML code from website
+                    else:
+                        print(colored("[-] Non-HTML content received or empty response, skipping parsing \n", "red"))
+                        if write_to_file == True: log_to_file("[-] Non-HTML content received or empty response, skipping parsing \n", log_file)
+                        continue
                 except:
                     if write_to_file == True: 
                         log_to_file(f"[-] Unable to extract HTML from website [Status Code Retrieved : {res.status_code}] \n", log_file)
@@ -69,73 +77,72 @@ def start_fuzzer(wordlist_path, website_link, delay, verbose="N", write_to_file=
                     continue # Skip below code as no data is stored
                     
                 for links in stored_links:
-                    if links is None:
-                        pass
+                    if links is None: pass
                     
                     if write_to_file == True: 
                         log_to_file(f"[+] FOUND LINK : {links} \n", log_file)
                     else:
-                        print(f"[+] FOUND LINK : {colored(links, 'green')}")
+                        print(f"   --> [+] FOUND LINK : {colored(links, 'green')}")
                 
                 for titles in stored_titles:
-                    if titles is None:
-                        pass
+                    if titles is None: pass
                     
                     if write_to_file == True: 
                         log_to_file(f"[+] FOUND TITLE : {titles} \n", log_file)
                     else:
-                        print(f"[+] FOUND TITLE : {colored(titles, 'green')}")
+                        print(f"   --> [+] FOUND TITLE : {colored(titles, 'green')}")
                     
                 for comments in stored_comments:
-                    if comments is None:
-                        pass
+                    if comments is None: pass
                     
                     if write_to_file == True: 
                         log_to_file(f"[+] FOUND COMMENT : {comments} \n", log_file)
                     else:
-                        print(f"[+] FOUND COMMENT : {colored(comments, 'green')}")
+                        print(f"   --> [+] FOUND COMMENT : {colored(comments, 'green')}")
                     
                 for forms in stored_forms:
-                    if forms is None:
-                        pass
+                    if forms is None: pass
                     
                     if write_to_file == True: 
-                        log_to_file(f"[+] FOUND FORM : {forms} \n", log_file)
+                        log_to_file(f"\t[+] FOUND FORM : {forms} \n", log_file)
                     else:
-                        print(f"[+] FOUND FORM : {colored(forms, 'green')}")
-                    
-                if write_to_file == True: 
-                    log_to_file("\n", log_file) # Reduce clutter in file
-                else:
-                    print("\n") # Reduce clutter in terminal
+                        print(f"   --> [+] FOUND FORM : {colored(forms, 'green')}")
+                
+                # Reduce clutter    
+                if write_to_file == True: log_to_file("\n", log_file) 
+                else: print("\n")
     
 def verbose_output(html_content):
     links, titles, comments, forms = [], [], [], []
     
     for link in html_content.find_all("a"):
         try:
-            links.append(link.string)
-        except:
+            href = link.get('href') # Different logic for links as stripping normally doesnt work always
+            if href:
+                links.append(href.strip())
+        except AttributeError:
             links.append("Error encountered, RAW OUTPUT - "+str(links))
         
     for title in html_content.find_all("title"):
         try:
-            titles.append(title.string)
-        except:
+            if title.string:
+                titles.append(title.string.strip())
+        except AttributeError:
             titles.append("Error encountered, RAW OUTPUT - "+str(title))
     
-    for comment in html_content.find_all(string=lambda text: isinstance(text, Comment)):
+    for comment in html_content.find_all(string=lambda text: isinstance(text, Comment)):        
         try:
-            comments.append(comment[:60])
-        except:
+            if comment:
+                comments.append(comment.strip()[:60])
+        except AttributeError:
             comments.append("Error encountered, RAW OUTPUT - "+str(comment))
     
-    for form in html_content.find_all("form"):
+    for form in html_content.find_all("form"):        
         try:
             action = form.get('action')
             if action:
-                forms.append(action)
-        except:
+                forms.append(action.strip())
+        except AttributeError:
             forms.append("Error encountered, RAW OUTPUT - "+str(form))
         
     return links, titles, comments, forms
@@ -220,7 +227,7 @@ if verbose_option == "Y":
     if verbose_log_option == "Y":
         print(colored("[!] Verbose option set to True. Verbose logs will not be shown in terminal but saved in a text file\n", 'yellow', attrs=['bold']))
         verbose_log_flag = True
-        log_file = "fuzzfindr_log-"+str(uuid.uuid4())[:8] + ".txt"
+        log_file = "fuzzfindr_log-"+str(uuid.uuid4())[:6] + ".txt"
     else:
         print(colored(f"[!] Verbose output will be displayed on terminal only\n", 'yellow', attrs=['bold']))
 
