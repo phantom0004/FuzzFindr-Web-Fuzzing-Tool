@@ -26,11 +26,14 @@ def display_banner():
     print(banner+banner_msg+"\t\tUnauthorised usage is prohibited")
     print("\n") # Reduce clutter
     
-def start_fuzzer(wordlist_path, website_link, verbose="N", delay=0.3, write_to_file=False):
+def start_fuzzer(wordlist_path, website_link, delay, verbose="N", write_to_file=False):
     global log_file, redirect_counter
     with open(wordlist_path, "r") as wordlist:
         for word in wordlist: 
-            time.sleep(delay) # Prevent "too many requests" status code or else even a potential website block  
+            try:
+                time.sleep(float(delay)) # Prevent "too many requests" status code or else even a potential website block 
+            except KeyboardInterrupt:
+                break 
             word = word.strip()
             try:
                 res = requests.get(url=f"{website_link}/{word}", allow_redirects=False)
@@ -38,7 +41,7 @@ def start_fuzzer(wordlist_path, website_link, verbose="N", delay=0.3, write_to_f
             except KeyboardInterrupt:
                 break
             except TimeoutError:
-                print("Connection timeout, trying another word . . .")
+                print("Connection timeout, skipping . . .")
                 continue
             
             if res.status_code == 404: continue
@@ -55,39 +58,53 @@ def start_fuzzer(wordlist_path, website_link, verbose="N", delay=0.3, write_to_f
                     print("\n") # Reduce below clutter
                     continue
                 finally:
-                    error_check(res.status_code) # Check if the website entered returns any error
+                    error_check(res.status_code) # Check if the website returned any error
                 
                 stored_links, stored_titles, stored_comments, stored_forms = (verbose_output(html_extract))
+                if stored_links is None and stored_titles is None and stored_comments is None and stored_forms is None:
+                    print(colored("[-] No data was able to be extracted for this section", "red"))
+                    continue # Skip below code as no data is stored
+                    
                 for links in stored_links:
                     if links is None:
                         pass
-                    if write_to_file == True: log_to_file(f"[+] FOUND LINK : {links} \n", log_file)
+                    
+                    if write_to_file == True: 
+                        log_to_file(f"[+] FOUND LINK : {links} \n", log_file)
                     else:
-                        print(f"[+] FOUND LINK : {links}")
+                        print(f"[+] FOUND LINK : {colored(links, 'green')}")
                 
                 for titles in stored_titles:
                     if titles is None:
                         pass
-                    if write_to_file == True: log_to_file(f"[+] FOUND TITLE : {titles} \n", log_file)
+                    
+                    if write_to_file == True: 
+                        log_to_file(f"[+] FOUND TITLE : {titles} \n", log_file)
                     else:
-                        print(f"[+] FOUND TITLE : {titles}")
+                        print(f"[+] FOUND TITLE : {colored(titles, 'green')}")
                     
                 for comments in stored_comments:
                     if comments is None:
                         pass
-                    if write_to_file == True: log_to_file(f"[+] FOUND COMMENT : {comments} \n", log_file)
+                    
+                    if write_to_file == True: 
+                        log_to_file(f"[+] FOUND COMMENT : {comments} \n", log_file)
                     else:
-                        print(f"[+] FOUND COMMENT : {comments}")
+                        print(f"[+] FOUND COMMENT : {colored(comments, 'green')}")
                     
                 for forms in stored_forms:
                     if forms is None:
                         pass
-                    if write_to_file == True: log_to_file(f"[+] FOUND FORM : {forms} \n", log_file)
-                    else:
-                        print(f"[+] FOUND FORM : {forms}")
                     
-                print("\n") # Reduce below clutter
-                if write_to_file == True: log_to_file("\n", log_file)
+                    if write_to_file == True: 
+                        log_to_file(f"[+] FOUND FORM : {forms} \n", log_file)
+                    else:
+                        print(f"[+] FOUND FORM : {colored(forms, 'green')}")
+                    
+                if write_to_file == True: 
+                    log_to_file("\n", log_file) # Reduce clutter in file
+                else:
+                    print("\n") # Reduce clutter in terminal
     
 def verbose_output(html_content):
     links, titles, comments, forms = [], [], [], []
@@ -202,18 +219,21 @@ if verbose_option == "Y":
         print(colored("[!] Verbose option set to True. Verbose logs will not be shown in terminal but saved in a text file\n", 'yellow', attrs=['bold']))
         verbose_log_flag = True
         log_file = "fuzzfindr_log-"+str(uuid.uuid4())[:8] + ".txt"
+    else:
+        print(colored(f"[!] Verbose output will be displayed on terminal only\n", 'yellow', attrs=['bold']))
 
 try:
-    delay_option = float(input("Enter a delay option in between requests (Default is 0.3 seconds): "))
+    delay_option = float(input("Enter a delay option in between requests (Default is no delay!): "))
     if delay_option < 0: 
-        print("[-] Unable to handle negative delays, defaulting to 0.3 seconds")
-        delay_option = 0.3
+        delay_option = 0
 except:
-    print("[-] Invalid float value entered, defaulting to 0.3 seconds")
+    delay_option = 0
+finally:
+    print(colored(f"[!] Delay option set to {delay_option} seconds\n", 'yellow', attrs=['bold']))
 
-print(colored(f"[!] Started Fuzzing at : {fetch_time()} [Press ctrl+c to abort]\n", 'yellow', attrs=['bold']))
-start_fuzzer(wordlist_path, website_link, verbose_option, delay_option, verbose_log_flag)
+print(colored(f"[!] Started Fuzzing at : {fetch_time()} [Press ctrl+c to abort]", attrs=['bold']))
+start_fuzzer(wordlist_path, website_link, delay_option, verbose_option, verbose_log_flag)
 
-print(colored(f"[!] Fuzzing ended at : {fetch_time()}\n", 'yellow', attrs=['bold']))
+print(colored(f"[!] Fuzzing ended at : {fetch_time()}", attrs=['bold']))
 if log_file is not None:
-    print(colored(f"[+] Verbose log file saved at : {log_file}", 'green'))
+    print(colored(f"[+] Verbose log file saved at : {log_file} (Stored same directory as fuzzfindr)", 'green'))
