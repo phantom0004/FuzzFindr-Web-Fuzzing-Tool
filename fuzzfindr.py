@@ -4,6 +4,8 @@
 # testing only. Use it exclusively on systems where you have explicit authorization.
 # Unauthorized use of this software is illegal and unethical.
 # ---------------------------------------------------------------------------------------
+# Check me out on GitHub! -> https://github.com/phantom0004
+#---------------------------------------------------------------------------------------
 import requests
 from termcolor import colored
 from bs4 import BeautifulSoup, Comment
@@ -53,16 +55,17 @@ def start_fuzzer(wordlist_path, website_link, delay, verbose="N", write_to_file=
                 try:
                     html_extract = BeautifulSoup(res.content, "html.parser") # Extract HTML code from website
                 except:
-                    print(colored(f"[-] Unable to extract HTML from website [Status Code Retrieved : {res.status_code}]", "red"))
-                    if write_to_file == True: log_to_file(f"[-] Unable to extract HTML from website [Status Code Retrieved : {res.status_code}] \n", log_file)
-                    print("\n") # Reduce below clutter
+                    if write_to_file == True: 
+                        log_to_file(f"[-] Unable to extract HTML from website [Status Code Retrieved : {res.status_code}] \n", log_file)
+                    else:
+                        print(colored(f"[-] Unable to extract HTML from website [Status Code Retrieved : {res.status_code}] \n", "red"))
                     continue
                 finally:
                     error_check(res.status_code) # Check if the website returned any error
                 
                 stored_links, stored_titles, stored_comments, stored_forms = (verbose_output(html_extract))
                 if stored_links is None and stored_titles is None and stored_comments is None and stored_forms is None:
-                    print(colored("[-] No data was able to be extracted for this section", "red"))
+                    print(colored("[-] No data was able to be extracted for this section \n", "red"))
                     continue # Skip below code as no data is stored
                     
                 for links in stored_links:
@@ -195,10 +198,9 @@ log_file = None
 redirect_counter = [0] # Mimics a 'static' datatype
 
 if website_link is None or wordlist_path is None:
-    exit("[-] Incorrect usage detected. Please run the program as follows:\n"
-     "    python3 fuzzfindr.py <website_link> <wordlist_path>\n"
-     "Example:\n"
-     "    python3 fuzzfindr.py http://vulnerablewebsite.com fuzz_wordlist.txt")
+    exit("[-] Incorrect usage detected. Please run the program as follows: python3 fuzzfindr.py <website_link> <wordlist_path>\n"
+     "Example: python3 fuzzfindr.py http://vulnerablewebsite.com fuzz_wordlist.txt\n\n"
+     "For more information, check: https://github.com/phantom0004/FuzzFindr-Web-Fuzzing-Tool")
 
 if website_link[-1:] == "/":
     website_link = website_link[:-1]
@@ -237,3 +239,7 @@ start_fuzzer(wordlist_path, website_link, delay_option, verbose_option, verbose_
 print(colored(f"[!] Fuzzing ended at : {fetch_time()}", attrs=['bold']))
 if log_file is not None:
     print(colored(f"[+] Verbose log file saved at : {log_file} (Stored same directory as fuzzfindr)", 'green'))
+    
+print("The fuzz storm has passed >:( See you next time!")
+
+# Program created purley by phantom0004, all rights reserved
