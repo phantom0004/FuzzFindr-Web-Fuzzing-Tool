@@ -1,5 +1,7 @@
 ### Overview:
-FuzzFindr is a robust web fuzzing tool inspired by the popular "ffluf" tool on Kali Linux. Designed to enhance web security testing, FuzzFindr allows users to meticulously fuzz web links using customizable wordlists. It stands out by providing detailed outputs and effectively handling a wide array of HTTP errors, ensuring smooth and efficient operation.
+FuzzFindr is a robust web fuzzing tool inspired by the popular "ffuf" tool on Kali Linux. Designed to enhance web security testing, FuzzFindr allows users to meticulously fuzz web links using customizable wordlists. It stands out by providing detailed outputs and effectively handling a wide array of HTTP errors, ensuring smooth and efficient operation.
+
+As a student in cybersecurity, this fuzzing tool not only sharpens my coding abilities but also immerses me in the real-world scenarios of identifying and mitigating software vulnerabilities. With each test case generated and executed, I gain insights into how different input data can impact the stability and security of software systems. 
 
 ### Key Features:
 - **Detailed HTML Output:** Neatly formats and displays the HTML structure of fuzzed web pages.
@@ -22,4 +24,4 @@ To get started with FuzzFindr, clone the repository, configure your wordlist, an
 FuzzFindr is open for contributions! Whether you're looking to fix bugs, enhance features, or improve documentation, your input is welcome. :)
 
 ### License:
-FuzzFindr is released under the MIT-License.
+FuzzFindr is released under the MIT-License, all rights reserved.
