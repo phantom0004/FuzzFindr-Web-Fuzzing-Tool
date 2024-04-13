@@ -63,11 +63,7 @@ def start_fuzzer(wordlist_path, website_link, delay, verbose="N", write_to_file=
             
             if res.status_code == 404: continue
             
-            if verbose == "Y":
-                print("[+] DIRECTORY FOUND : " + colored(word, "green") + f"    [Full Link : {website_link}/{word}]")
-            else:
-                print("[+] DIRECTORY FOUND : " + colored(word, "green") + f"    [Full Link : {website_link}/{word}] \n")
-                
+            print("[+] DIRECTORY FOUND : " + colored(word, "green") + f"    [Full Link : {website_link}/{word}]")    
             if write_to_file == True: log_to_file(f"[+] DIRECTORY FOUND : {word} [Full Link : {website_link}/{word}] \n", log_file)
                 
             if verbose == "Y":
@@ -140,7 +136,7 @@ def verbose_output(html_content):
     for link in html_content.find_all("a"):
         try:
             href = link.get('href') # Different logic for links as stripping normally doesnt work always
-            if href:
+            if href and len(href) > 1:
                 links.append(href.strip())
         except AttributeError:
             links.append("Error encountered, RAW OUTPUT - "+str(links))
@@ -276,7 +272,3 @@ if log_file is not None:
 print("\nThe fuzz storm has passed >:( See you next time!")
 
 # Program created purley by phantom0004, all rights reserved
-
-
-# TO FIX : FIX ISSUE THAT REDIRECTED WEBSITES DONT SHOW USEFUL INFORMATION
-# TO FIX : REDIRECTION ERROR DOESNT WORK
