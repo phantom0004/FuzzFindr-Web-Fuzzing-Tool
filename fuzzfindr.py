@@ -33,25 +33,27 @@ def start_fuzzer(wordlist_path, website_link, delay, verbose="N", write_to_file=
     with open(wordlist_path, "r") as wordlist:
         for word in wordlist: 
             word = word.strip()
+            fuzzing_link = normalize_url(f"{website_link}/{word}") # Normalize fuzzing link in hopes to eliminate redirections 
             try:
                 time.sleep(float(delay)) # Prevent "too many requests" status code or else even a potential website block 
             except KeyboardInterrupt:
                 break 
             
             try:
-                res = requests.get(url=f"{website_link}/{word}", allow_redirects=False)
-                redirect_output = check_for_redirects(res.status_code, redirect_counter)
+                res = requests.get(url=f"{fuzzing_link}", allow_redirects=False)
+                redirect_output = check_for_redirects(res, redirect_counter,fuzzing_link)
                 
-                if redirect_output == True:
+                if redirect_output[0] == True:
                     if verbose == "Y" and write_to_file == False:
-                        print("\n[!] Server is redirecting requests, adding delay to try prevent this . . .")
+                        print(f"[!] Server is redirecting requests, adding delay to try prevent this. [Redirection Link {colored(redirect_output[1], 'green')}]")
                     elif verbose == "Y" and write_to_file == True:
-                        log_to_file("[!] Server is redirecting requests, adding delay to try prevent this . . . \n", log_file) 
+                        log_to_file(f"[!] Server is redirecting requests, adding delay to try prevent this. [Redirection Link {redirect_output[1]}]\n", log_file) 
                     
-                elif redirect_output == "redirect_fail":
+                    fuzzing_link = normalize_url(fuzzing_link) # Update fuzzing link to remove the trailing slash
+                    
+                elif redirect_output[0] == "redirect_fail":
                     exit("Server keeps redirecting, this is possibly due to the fact that it has noticed the fuzzing attempts")
                     
-                          
             except KeyboardInterrupt:
                 break
             except TimeoutError:
@@ -72,21 +74,21 @@ def start_fuzzer(wordlist_path, website_link, delay, verbose="N", write_to_file=
                     if res.content and 'text/html' in res.headers.get('Content-Type', ''):
                         html_extract = BeautifulSoup(res.content, "html.parser") # Extract HTML code from website
                     else:
-                        print(colored("[-] Non-HTML content received or empty response, skipping parsing \n", "red"))
-                        if write_to_file == True: log_to_file("[-] Non-HTML content received or empty response, skipping parsing \n\n", log_file)
+                        if write_to_file == True: 
+                            log_to_file("[-] Non-HTML content received or empty response, skipping parsing \n\n", log_file)
+                        if write_to_file == False:
+                            print(colored("[-] Non-HTML content received or empty response, skipping parsing \n", "red"))
                         continue
                 except:
+                    print(colored(f"[-] Unable to extract HTML from website [Status Code Retrieved : {res.status_code}] \n", "red"))
                     if write_to_file == True: 
                         log_to_file(f"[-] Unable to extract HTML from website [Status Code Retrieved : {res.status_code}] \n", log_file)
-                    else:
-                        print(colored(f"[-] Unable to extract HTML from website [Status Code Retrieved : {res.status_code}] \n", "red"))
                     continue
                 finally:
-                    if verbose == "Y" and write_to_file == False:
-                        if error_check_output is not None:
+                    if error_check_output is not None:
+                        if write_to_file == False:
                             print(error_check_output)
-                    elif verbose == "Y" and write_to_file == True:
-                        if error_check_output is not None:
+                        elif write_to_file == True:
                             log_to_file(error_check_output+"\n", log_file)
                 
                 stored_links, stored_titles, stored_comments, stored_forms = (verbose_output(html_extract))
@@ -202,22 +204,43 @@ def log_to_file(content, file_name):
     with open(file_name, "a") as log_file:
         log_file.write(content)
 
-def check_for_redirects(status_code, redirections_happened): 
-    if redirections_happened[0] == 6:
-        return "redirect_fail"
-           
-    if status_code in range(300,399):
-        redirections_happened[0] += 1
-        
-        if redirections_happened[0] < 3:
-            time.sleep(2.5) # Add small delay
-        else:
-            time.sleep(5) # Add large delay
-            
-        return True # Redirection occured
-    else:
+def check_for_redirects(response, redirections_happened, full_url):
+    if redirections_happened[0] >= 8:
+        return "redirect_fail", None  # Max redirections reached
+
+    redirect_flag = False  # Indicates if a redirection occurred
+
+    # Check if link was re-used in history
+    if response.history:
+        for previous_response in response.history:
+            if full_url in previous_response.url:
+                redirect_flag = True
+                break
+
+    # Check current response for a new redirect status
+    if response.status_code in range(300, 399):
+        redirect_flag = True
+
+    if not redirect_flag:
         redirections_happened[0] = 0
-        return False
+        return False, None
+
+    # Handle redirection
+    redirections_happened[0] += 1
+    delay_time = 2 * redirections_happened[0]
+    time.sleep(delay_time)
+    
+    try:
+        redirected_url = response.headers.get('Location')
+    except:
+        redirected_url = "Unable to identify the location of the redirect"
+    return True, redirected_url
+
+def normalize_url(full_url):
+    if full_url.endswith('/'):
+        return full_url[:-1]
+    else:
+        return full_url + '/'
 
 display_banner()
 
