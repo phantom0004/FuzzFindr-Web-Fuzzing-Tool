@@ -1,4 +1,4 @@
-# Example URLS for testing ethically: http://testphp.vulnweb.com  or  http://www.itsecgames.com
+# Example URLS for testing ethically: http://testphp.vulnweb.com  or  https://vulnerable-website.com/
 # ---------------------------------------------------------------------------------------
 # This program, created by Phantom, is intended for ethical and responsible security
 # testing only. Use it exclusively on systems where you have explicit authorization.
@@ -32,14 +32,26 @@ def start_fuzzer(wordlist_path, website_link, delay, verbose="N", write_to_file=
     global log_file, redirect_counter
     with open(wordlist_path, "r") as wordlist:
         for word in wordlist: 
+            word = word.strip()
             try:
                 time.sleep(float(delay)) # Prevent "too many requests" status code or else even a potential website block 
             except KeyboardInterrupt:
                 break 
-            word = word.strip()
+            
             try:
                 res = requests.get(url=f"{website_link}/{word}", allow_redirects=False)
-                check_for_redirects(res.status_code, redirect_counter)
+                redirect_output = check_for_redirects(res.status_code, redirect_counter)
+                
+                if redirect_output == True:
+                    if verbose == "Y" and write_to_file == False:
+                        print("\n[!] Server is redirecting requests, adding delay to try prevent this . . .")
+                    elif verbose == "Y" and write_to_file == True:
+                        log_to_file("[!] Server is redirecting requests, adding delay to try prevent this . . . \n", log_file) 
+                    
+                elif redirect_output == "redirect_fail":
+                    exit("Server keeps redirecting, this is possibly due to the fact that it has noticed the fuzzing attempts")
+                    
+                          
             except KeyboardInterrupt:
                 break
             except TimeoutError:
@@ -59,12 +71,13 @@ def start_fuzzer(wordlist_path, website_link, delay, verbose="N", write_to_file=
             if write_to_file == True: log_to_file(f"[+] DIRECTORY FOUND : {word} [Full Link : {website_link}/{word}] \n", log_file)
                 
             if verbose == "Y":
+                error_check_output = error_check(res.status_code)
                 try:
                     if res.content and 'text/html' in res.headers.get('Content-Type', ''):
                         html_extract = BeautifulSoup(res.content, "html.parser") # Extract HTML code from website
                     else:
                         print(colored("[-] Non-HTML content received or empty response, skipping parsing \n", "red"))
-                        if write_to_file == True: log_to_file("[-] Non-HTML content received or empty response, skipping parsing \n", log_file)
+                        if write_to_file == True: log_to_file("[-] Non-HTML content received or empty response, skipping parsing \n\n", log_file)
                         continue
                 except:
                     if write_to_file == True: 
@@ -73,7 +86,12 @@ def start_fuzzer(wordlist_path, website_link, delay, verbose="N", write_to_file=
                         print(colored(f"[-] Unable to extract HTML from website [Status Code Retrieved : {res.status_code}] \n", "red"))
                     continue
                 finally:
-                    error_check(res.status_code) # Check if the website returned any error
+                    if verbose == "Y" and write_to_file == False:
+                        if error_check_output is not None:
+                            print(error_check_output)
+                    elif verbose == "Y" and write_to_file == True:
+                        if error_check_output is not None:
+                            log_to_file(error_check_output+"\n", log_file)
                 
                 stored_links, stored_titles, stored_comments, stored_forms = (verbose_output(html_extract))
                 if stored_links is None and stored_titles is None and stored_comments is None and stored_forms is None:
@@ -113,8 +131,8 @@ def start_fuzzer(wordlist_path, website_link, delay, verbose="N", write_to_file=
                         print(f"   --> [+] FOUND FORM : {colored(forms, 'green')}")
                 
                 # Reduce clutter    
-                if write_to_file == True: log_to_file("\n", log_file) 
-                else: print("\n")
+                if write_to_file == True: log_to_file("\n\n", log_file)
+                else: print(" ")
     
 def verbose_output(html_content):
     links, titles, comments, forms = [], [], [], []
@@ -163,7 +181,9 @@ def error_check(response):
     }
 
     if response in website_error_messages:
-        print(f"[!] More info : {website_error_messages[response]}")
+        return f"[!] Website returned a status that is not 200 : {website_error_messages[response]} [Status : {response}]"
+    else:
+        return None
 
 def handle_user_arguments():        
     if len(sys.argv) != 3:
@@ -186,20 +206,22 @@ def log_to_file(content, file_name):
     with open(file_name, "a") as log_file:
         log_file.write(content)
 
-def check_for_redirects(status_code, redirections_happened):    
+def check_for_redirects(status_code, redirections_happened): 
+    if redirections_happened[0] == 6:
+        return "redirect_fail"
+           
     if status_code in range(300,399):
-        print("[!] Website redirection detected! Pausing before next redirect . . .")
         redirections_happened[0] += 1
         
         if redirections_happened[0] < 3:
             time.sleep(2.5) # Add small delay
         else:
             time.sleep(5) # Add large delay
+            
+        return True # Redirection occured
     else:
         redirections_happened[0] = 0
-    
-    if redirections_happened[0] == 6:
-        exit("Server keeps redirecting, this is possibly due to the fact that it has noticed the fuzzing attempts")
+        return False
 
 display_banner()
 
@@ -236,7 +258,7 @@ if verbose_option == "Y":
         print(colored(f"[!] Verbose output will be displayed on terminal only\n", 'yellow', attrs=['bold']))
 
 try:
-    delay_option = float(input("Enter a delay option in between requests (Default is no delay!): "))
+    delay_option = float(input("Enter a delay in seconds to have a pause in between of requests (Default is '0' seconds): "))
     if delay_option < 0: 
         delay_option = 0
 except:
@@ -254,3 +276,7 @@ if log_file is not None:
 print("\nThe fuzz storm has passed >:( See you next time!")
 
 # Program created purley by phantom0004, all rights reserved
+
+
+# TO FIX : FIX ISSUE THAT REDIRECTED WEBSITES DONT SHOW USEFUL INFORMATION
+# TO FIX : REDIRECTION ERROR DOESNT WORK
