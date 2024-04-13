@@ -14,7 +14,7 @@ As a student in cybersecurity, this fuzzing tool not only sharpens my coding abi
 - **Clone this repository:** git clone https://github.com/yourusername/FuzzFindr-Web-Fuzzing-Tool.git
 - **Navigate to files:** cd FuzzFindr-Web-Fuzzing-Tool
 - **Install requirements:** pip install -r requirements.txt
-- **Program launch example:** python3 fuzzfindr.py <website_link> <wordlist_path>
+- **Program launch example:** python3 fuzzfindr.py <website_link> "<wordlist_path>"
 
 ### Current Status:
 FuzzFindr is actively being developed with plans to improve its performance and expand the informational output on the screen. The goal is to provide a tool that is not only effective but also user-friendly and adaptable to various web security testing needs.
