@@ -6,12 +6,16 @@
 # ---------------------------------------------------------------------------------------
 # Check me out on GitHub! -> https://github.com/phantom0004
 #---------------------------------------------------------------------------------------
-import requests
-from termcolor import colored
-from bs4 import BeautifulSoup, Comment
+try:
+    import requests
+    from termcolor import colored
+    from bs4 import BeautifulSoup, Comment
+    import uuid
+except ModuleNotFoundError as error_message:
+    exit(f"You are missing the following library, please install in terminal using 'pip install <module name>' : {error_message}")
+import os
 import time
 import sys
-import uuid
 
 def display_banner():
     banner = """
@@ -29,11 +33,13 @@ def display_banner():
     print("\n") # Reduce clutter
     
 def start_fuzzer(wordlist_path, website_link, delay, verbose="N", write_to_file=False):
-    global log_file, redirect_counter
+    global log_file, redirect_counter # Define global variables needed
+    
     with open(wordlist_path, "r") as wordlist:
         for word in wordlist: 
             word = word.strip()
             fuzzing_link = normalize_url(f"{website_link}/{word}") # Normalize fuzzing link in hopes to eliminate redirections 
+            
             try:
                 time.sleep(float(delay)) # Prevent "too many requests" status code or else even a potential website block 
             except KeyboardInterrupt:
@@ -42,6 +48,7 @@ def start_fuzzer(wordlist_path, website_link, delay, verbose="N", write_to_file=
             try:
                 res = requests.get(url=f"{fuzzing_link}", allow_redirects=False)
                 redirect_output = check_for_redirects(res, redirect_counter,fuzzing_link)
+                if res.status_code == 404: continue
                 
                 if redirect_output[0] == True:
                     if verbose == "Y" and write_to_file == False:
@@ -63,74 +70,12 @@ def start_fuzzer(wordlist_path, website_link, delay, verbose="N", write_to_file=
                 print(f"[-] An exception occured within the requests library - {res_error}")
                 break
             
-            if res.status_code == 404: continue
-            
-            print("[+] DIRECTORY FOUND : " + colored(word, "green") + f"    [Full Link : {website_link}/{word}]")    
-            if write_to_file == True: log_to_file(f"[+] DIRECTORY FOUND : {word} [Full Link : {website_link}/{word}] \n", log_file)
-                
-            if verbose == "Y":
-                error_check_output = error_check(res.status_code)
-                try:
-                    if res.content and 'text/html' in res.headers.get('Content-Type', ''):
-                        html_extract = BeautifulSoup(res.content, "html.parser") # Extract HTML code from website
-                    else:
-                        if write_to_file == True: 
-                            log_to_file("[-] Non-HTML content received or empty response, skipping parsing \n\n", log_file)
-                        if write_to_file == False:
-                            print(colored("[-] Non-HTML content received or empty response, skipping parsing \n", "red"))
-                        continue
-                except:
-                    print(colored(f"[-] Unable to extract HTML from website [Status Code Retrieved : {res.status_code}] \n", "red"))
-                    if write_to_file == True: 
-                        log_to_file(f"[-] Unable to extract HTML from website [Status Code Retrieved : {res.status_code}] \n", log_file)
-                    continue
-                finally:
-                    if error_check_output is not None:
-                        if write_to_file == False:
-                            print(error_check_output)
-                        elif write_to_file == True:
-                            log_to_file(error_check_output+"\n", log_file)
-                
-                stored_links, stored_titles, stored_comments, stored_forms = (verbose_output(html_extract))
-                if stored_links is None and stored_titles is None and stored_comments is None and stored_forms is None:
-                    print(colored("[-] No data was able to be extracted for this section \n", "red"))
-                    continue # Skip below code as no data is stored
-                    
-                for links in stored_links:
-                    if links is None: pass
-                    
-                    if write_to_file == True: 
-                        log_to_file(f"   --> [+] FOUND LINK : {links} \n", log_file)
-                    else:
-                        print(f"   --> [+] FOUND LINK : {colored(links, 'green')}")
-                
-                for titles in stored_titles:
-                    if titles is None: pass
-                    
-                    if write_to_file == True: 
-                        log_to_file(f"   --> [+] FOUND TITLE : {titles} \n", log_file)
-                    else:
-                        print(f"   --> [+] FOUND TITLE : {colored(titles, 'green')}")
-                    
-                for comments in stored_comments:
-                    if comments is None: pass
-                    
-                    if write_to_file == True: 
-                        log_to_file(f"   --> [+] FOUND COMMENT : {comments} \n", log_file)
-                    else:
-                        print(f"   --> [+] FOUND COMMENT : {colored(comments, 'green')}")
-                    
-                for forms in stored_forms:
-                    if forms is None: pass
-                    
-                    if write_to_file == True: 
-                        log_to_file(f"   --> [+] FOUND FORM : {forms} \n", log_file)
-                    else:
-                        print(f"   --> [+] FOUND FORM : {colored(forms, 'green')}")
-                
-                # Reduce clutter    
-                if write_to_file == True: log_to_file("\n\n", log_file)
-                else: print(" ")
+            if write_to_file == "Y" : print() # Reduce clutter from abpve verbose output
+            print("[+] DIRECTORY FOUND : " + colored(word, "green") + f"    [Full Link : {fuzzing_link}]")    
+            if write_to_file == True: log_to_file(f"\n[+] DIRECTORY FOUND : {word} [Full Link : {fuzzing_link}]\n", log_file)
+             
+            if verbose == "Y": 
+                parse_verbose_output(res, write_to_file, log_file)
     
 def verbose_output(html_content):
     links, titles, comments, forms = [], [], [], []
@@ -179,7 +124,7 @@ def error_check(response):
     }
 
     if response in website_error_messages:
-        return f"[!] Website returned a status that is not 200 : {website_error_messages[response]} [Status : {response}]"
+        return f"[ERROR INFO] Website returned a status that is not 200 : {website_error_messages[response]} [Status : {response}]"
     else:
         return None
 
@@ -242,27 +187,102 @@ def normalize_url(full_url):
     else:
         return full_url + '/'
 
+def clear_terminal():    
+    print("[+] OPTIONS SELECTED, Cleaning terminal and starting FuzzFindr . . .")
+    time.sleep(3) # Allow user to read message and other above content
+    
+    # Execute the appropriate command based on the operating system
+    command = "cls" if os.name == 'nt' else "clear"
+    result = os.system(command)
+    
+    if result != 0:
+        print("[-] Failed to clear the terminal. Continuing without clearing \n\n")
+    else:
+        display_banner()
+
+def parse_verbose_output(res, write_to_file, log_file):
+    html_extracted = True
+    try:
+        if res.content and 'text/html' in res.headers.get('Content-Type', ''):
+            html_extract = BeautifulSoup(res.content, "html.parser") # Extract HTML code from website
+        else:
+            if write_to_file == True: 
+                log_to_file("[-] Non-HTML content received or empty response\n", log_file)
+            if write_to_file == False:
+                print(colored("[-] Non-HTML content received or empty response\n", "red"))
+            html_extracted = False
+    except:
+        print(colored(f"[-] Unable to extract HTML from website [Status Code Retrieved : {res.status_code}] \n", "red"))
+        if write_to_file == True: log_to_file(f"[-] Unable to extract HTML from website [Status Code Retrieved : {res.status_code}]\n", log_file)
+    finally:
+        error_check_output = error_check(res.status_code)
+        if error_check_output is not None:
+            if write_to_file == False:
+                print(error_check_output)
+            elif write_to_file == True:
+                log_to_file(error_check_output+"\n", log_file)
+    
+    if html_extracted == False : return
+    
+    stored_links, stored_titles, stored_comments, stored_forms = (verbose_output(html_extract))
+    if stored_links is None and stored_titles is None and stored_comments is None and stored_forms is None:
+        print(colored("[-] No data was able to be extracted for this section \n", "red"))
+        if write_to_file == True: log_to_file(f"[-] No data was able to be extracted for this section \n", log_file)
+    else: 
+        for links in stored_links:
+            if links is None: pass
+
+            if write_to_file == True: 
+                log_to_file(f"   --> [+] FOUND LINK : {links} \n", log_file)
+            else:
+                print(f"   --> [+] FOUND LINK : {colored(links, 'green')}")
+        
+        for titles in stored_titles:
+            if titles is None: pass
+            
+            if write_to_file == True: 
+                log_to_file(f"   --> [+] FOUND TITLE : {titles} \n", log_file)
+            else:
+                print(f"   --> [+] FOUND TITLE : {colored(titles, 'green')}")
+            
+        for comments in stored_comments:
+            if comments is None: pass
+            
+            if write_to_file == True: 
+                log_to_file(f"   --> [+] FOUND COMMENT : {comments} \n", log_file)
+            else:
+                print(f"   --> [+] FOUND COMMENT : {colored(comments, 'green')}")
+            
+        for forms in stored_forms:
+            if forms is None: pass
+            
+            if write_to_file == True: 
+                log_to_file(f"   --> [+] FOUND FORM : {forms} \n", log_file)
+            else:
+                print(f"   --> [+] FOUND FORM : {colored(forms, 'green')}")
+        
+        # Reduce clutter    
+    if write_to_file == True: log_to_file("\n\n", log_file)
+    else: print()
+
 display_banner()
 
+# Program required variables
 website_link, wordlist_path = handle_user_arguments()
-verbose_log_flag = False
-log_file = None
-redirect_counter = [0] # Mimics a 'static' datatype
+verbose_log_flag, log_file = False, None
+redirect_counter = [0]
 
 if website_link is None or wordlist_path is None:
     exit("[-] Incorrect usage detected. Please run the program as follows: python3 fuzzfindr.py <website_link> <wordlist_path>\n"
      "Example: python3 fuzzfindr.py http://vulnerablewebsite.com fuzz_wordlist.txt\n\n"
      "For more information, check: https://github.com/phantom0004/FuzzFindr-Web-Fuzzing-Tool")
 
-if website_link[-1:] == "/":
-    website_link = website_link[:-1]
-
 try:
     if (file := open(wordlist_path, "r")): file.close()
-except FileNotFoundError:
-    exit("[-] Wordlist cannot be found, ensure directory is valid")
-except OSError:
-    exit("[-] Incorrect format for wordlist text file, ensure path and file name is valid")
+except FileNotFoundError or OSError:
+    exit("[-] Wordlist cannot be found, ensure directory is valid and format is a text file")
+
+if website_link[-1:] == "/": website_link = website_link[:-1]
 
 verbose_option = input("The verbose option displays HTML content on the screen. Enable verbose option? [Y/N] (Default is 'N'): ").upper()
 if verbose_option == "Y":
@@ -271,27 +291,26 @@ if verbose_option == "Y":
     verbose_log_option = input("Do you want to log verbose output silently to a file? [Y/N] (Default is 'N'): ").upper()
     if verbose_log_option == "Y":
         print(colored("[!] Verbose option set to True. Verbose logs will not be shown in terminal but saved in a text file\n", 'yellow', attrs=['bold']))
-        verbose_log_flag = True
-        log_file = "fuzzfindr_log-"+str(uuid.uuid4())[:6] + ".txt"
+        
+        verbose_log_flag, log_file = True, "fuzzfindr_log-"+str(uuid.uuid4())[:6] + ".txt"
     else:
         print(colored(f"[!] Verbose output will be displayed on terminal only\n", 'yellow', attrs=['bold']))
 
 try:
     delay_option = float(input("Enter a delay in seconds to have a pause in between of requests (Default is '0' seconds): "))
-    if delay_option < 0: 
-        delay_option = 0
+    if delay_option < 0: delay_option = 0
 except:
     delay_option = 0
 finally:
     print(colored(f"[!] Delay option set to {delay_option} seconds\n", 'yellow', attrs=['bold']))
 
+clear_terminal() # Clear above clutter and display banner again
+
 print(colored(f"[!] Started Fuzzing at : {fetch_time()} [Press ctrl+c to abort]", attrs=['bold']))
 start_fuzzer(wordlist_path, website_link, delay_option, verbose_option, verbose_log_flag)
 
 print(colored(f"[!] Fuzzing ended at : {fetch_time()}", attrs=['bold']))
-if log_file is not None:
-    print(colored(f"[+] Verbose log file saved at : {log_file} (Stored same directory as fuzzfindr)", 'green'))
+if log_file is not None: print(colored(f"[+] Verbose log file saved at : {log_file} (Stored same directory as fuzzfindr)", 'green'))
     
 print("\nThe fuzz storm has passed >:( See you next time!")
-
 # Program created purley by phantom0004, all rights reserved
