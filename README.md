@@ -1,3 +1,5 @@
+![image](https://github.com/phantom0004/FuzzFindr-Web-Fuzzing-Tool/assets/42916447/533350d1-c3e6-45c8-a020-1758e963a1dc)
+
 ## Overview
 
 FuzzFindr is a robust web fuzzing tool inspired by the popular "ffuf" tool on Kali Linux. Designed to enhance web security testing, FuzzFindr allows users to meticulously fuzz web links using customizable wordlists. It stands out by providing detailed outputs and effectively handling a wide array of HTTP errors, ensuring smooth and efficient operation.
