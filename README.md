@@ -20,6 +20,19 @@ FuzzFindr is accessible to users with varying levels of technical knowledge, sim
 - **Program launch:** `python3 fuzzfindr.py <website_link> "<wordlist_path>"`
 - **Example launch:** `python3 fuzzfindr.py https://example.com "wordlist.txt"`
 
+### Program Output Example
+_Initial Setup_
+![image](https://github.com/phantom0004/FuzzFindr-Web-Fuzzing-Tool/assets/42916447/27175ee5-8f0a-43c2-99ad-149a239acb72)
+
+_Fuzzfindr Enumerating Directories (Verbose Enabled)_
+![image](https://github.com/phantom0004/FuzzFindr-Web-Fuzzing-Tool/assets/42916447/aa15bd71-1c80-4c37-8fb9-130e5f54bfe8)
+
+_Fuzzfindr Enumerating Directories (Verbose Disabled)_
+![image](https://github.com/phantom0004/FuzzFindr-Web-Fuzzing-Tool/assets/42916447/00936bd2-331d-4a10-8a06-382bbde2e979)
+
+_Fuzzfindr outputting to text file (Silent Verbose)_
+![image](https://github.com/phantom0004/FuzzFindr-Web-Fuzzing-Tool/assets/42916447/8f126384-73cb-41af-8d86-8028d7e366fe)
+
 ### Current Status
 
 FuzzFindr is actively being developed with plans to improve its performance and expand the informational output on the screen. The goal is to provide a tool that is effective, user-friendly, and adaptable to various web security testing needs.
