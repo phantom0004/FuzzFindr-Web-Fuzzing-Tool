@@ -33,14 +33,6 @@ _Fuzzfindr Enumerating Directories (Verbose Disabled)_
 _Fuzzfindr outputting to text file (Silent Verbose)_
 ![image](https://github.com/phantom0004/FuzzFindr-Web-Fuzzing-Tool/assets/42916447/8f126384-73cb-41af-8d86-8028d7e366fe)
 
-### Current Status
-
-FuzzFindr is actively being developed with plans to improve its performance and expand the informational output on the screen. The goal is to provide a tool that is effective, user-friendly, and adaptable to various web security testing needs.
-
-### Getting Started
-
-To get started with FuzzFindr, clone the repository, configure your wordlist, and begin testing your endpoints for security vulnerabilities. Detailed instructions are available in the "Usage" section.
-
 ### Contribute
 
 FuzzFindr is open for contributions! Whether you're interested in fixing bugs, enhancing features, or improving documentation, your input is welcome.
